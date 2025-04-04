@@ -1,0 +1,39 @@
+pipeline {
+    agent any
+    
+    environment {	
+		DOCKERHUB_CREDENTIALS=credentials('dockerlogin')
+	}
+
+    stages {
+        stage('SCM Checkout') {
+            steps {
+                echo 'SCM Checkout'
+                git 'https://github.com/PraveenPSNair/dockerProjApp.git'
+            }
+        }
+        stage('Building Docker Image') {
+            steps {
+                echo 'Building Docker Image'
+                dir('/var/lib/jenkins/workspace/DockerProject/forethought-app'){
+                    sh 'pwd'
+                    sh 'docker build -t praveenps18/pipelineapp:${BUILD_NUMBER} .'
+                    sh 'docker images'
+                    sh "docker tag praveenps18/pipelineapp:${BUILD_NUMBER} praveenps18/pipelineapp:latest"
+                }
+                
+            }
+        }
+        stage('Login2DockerHub'){
+            steps{
+                sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
+            }
+            
+        }
+        stage('Publish2DockerHub'){
+            steps{
+                sh "docker push praveenps18/pipelineapp:latest"
+            }
+        }
+    }
+}
